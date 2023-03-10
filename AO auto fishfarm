@@ -1,4 +1,8 @@
-```lua
+```ruby
+require 'redcarpet'
+markdown = Redcarpet.new("Hello World!")
+puts markdown.to_html
+
 local plr = game.Players.LocalPlayer
 local chr = plr.Character
 local plrtool = chr:WaitForChild("Wooden Rod")
