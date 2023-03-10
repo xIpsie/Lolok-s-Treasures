@@ -1,0 +1,78 @@
+local plr = game.Players.LocalPlayer
+local chr = plr.Character
+local plrtool = chr:WaitForChild("Wooden Rod")
+local remotes = game.ReplicatedStorage.RS.Remotes
+local food = plr.Backpack:FindFirstChild("Banana")
+local hungerbar = plr.PlayerGui.MainGui.UI.HUD.Anchor.HungerBar
+_G.fishfarm = false
+
+local function ToolAction(tool)
+    remotes.Misc.ToolAction:FireServer(tool)
+end
+
+local function fishing()
+    if plrtool then
+        task.wait(0.5)
+        if not chr:FindFirstChild("FishClock") then
+            ToolAction(plrtool)
+        end
+        chr:WaitForChild("FishBiteGoal")
+        while chr.FishBiteGoal do
+            task.wait()
+            ToolAction(plrtool)
+            if (not chr:FindFirstChild("FishBiteGoal")) then
+                return
+            end
+        end
+    end
+end
+
+local fishfunc = coroutine.create(fishing)
+coroutine.close(fishfunc)
+
+plrtool.Unequipped:Connect(function()
+    if _G.fishfarm and coroutine.status(fishfunc) ~= "dead" then
+        coroutine.close(fishfunc)
+    end
+end)
+
+plrtool.Equipped:Connect(function()
+    if _G.fishfarm and coroutine.status(fishfunc) == "dead" then
+        coroutine.resume(fishfunc)
+        ToolAction(plrtool)
+    end
+end)
+
+chr.ChildRemoved:Connect(function(obj)
+    if obj.Name == "FishClock" and _G.fishfarm then
+        task.wait(0.5)
+        ToolAction(plrtool)
+    end
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(tblInput, blnGP)
+    if (tblInput.KeyCode == Enum.KeyCode.X) and not(blnGP) then
+        _G.fishfarm = not(_G.fishfarm)
+        print(_G.fishfarm)
+        if _G.fishfarm then
+            chr.HumanoidRootPart.Anchored = true
+            while _G.fishfarm == true do
+                if not chr:FindFirstChild("FishClock") then
+                    fishing()
+                else
+                    coroutine.resume(fishfunc)
+                end
+                if tonumber(hungerbar.Back.Amount.Text) < 100 and food then
+                    ToolAction(food)
+                end
+                task.wait(0.5)
+            end
+        elseif _G.fishfarm == false then
+            chr.HumanoidRootPart.Anchored = false
+            coroutine.close(fishfunc)
+            if chr:FindFirstChild("FishClock") then
+               ToolAction(plrtool)
+            end
+        end
+    end
+end)
